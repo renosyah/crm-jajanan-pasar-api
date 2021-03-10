@@ -68,7 +68,6 @@ CREATE TABLE transaction(
     customer_id INT(11) NOT NULL,
     payment_id INT(11) NOT NULL,
     address TEXT,
-    shipment_fee INT,
     total INT,
     expired_date DATETIME NULL,
     FOREIGN KEY (customer_id) REFERENCES customer(id),

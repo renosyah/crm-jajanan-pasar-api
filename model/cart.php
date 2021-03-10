@@ -5,6 +5,14 @@
 // untuk query
 include("product.php");
 
+class total_cart {
+    public $item;
+    public $total; 
+
+    public function __construct(){
+    }
+}
+
 class cart {
     public $id;
     public $customer_id;
@@ -100,7 +108,7 @@ class cart {
 
     public function total($db,$customer_id) {
         $result_query = new result_query();
-        $query = "SELECT SUM(sub_total) as total FROM cart WHERE customer_id = ?";
+        $query = "SELECT COUNT(*) as item,SUM(sub_total) as total FROM cart WHERE customer_id = ?";
         $stmt = $db->prepare($query);
         $stmt->bind_param('i', $customer_id);
         $stmt->execute();      
@@ -115,7 +123,12 @@ class cart {
             return $result_query;
         }
         $result = $rows->fetch_assoc();
-        $result_query->data = (int) $result['total'];
+
+        $total_cart = new total_cart();
+        $total_cart->total = (int) $result['total'];
+        $total_cart->item = (int) $result['item'];
+
+        $result_query->data = $total_cart;
         $stmt->close();
         return $result_query;
     }

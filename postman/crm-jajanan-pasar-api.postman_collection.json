@@ -1816,7 +1816,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"customer_id\": 1,\n    \"payment_id\": 1,\n    \"address\": \"Jl Janti\",\n    \"total\": 1400\n}",
+							"raw": "{\n    \"customer_id\": 2,\n    \"address\": \"Jl Janti\",\n    \"total\": 48000\n}",
 							"options": {
 								"raw": {
 									"language": "json"

@@ -23,7 +23,8 @@ $usr->set($data);
 
 $check = $usr->one_by_product(get_connection(include("../config.php")));
 if ($check->data != null){
-    $check->data->quantity++;
+    $check->data->quantity += $usr->quantity;
+    $check->data->sub_total = $check->data->quantity * $check->data->price;
     $usr->set($check->data);
     $result = $usr->update(get_connection(include("../config.php")));
 

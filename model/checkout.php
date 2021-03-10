@@ -8,7 +8,6 @@ include("transaction.php");
 class checkout {
 
     public $customer_id;
-    public $payment_id;
     public $address;
     public $total;
 
@@ -17,7 +16,6 @@ class checkout {
 
     public function set($data){
         $this->customer_id = (int) $data->customer_id;
-        $this->payment_id = (int) $data->payment_id;
         $this->address = $data->address;
         $this->total = (int) $data->total;
     }
@@ -28,9 +26,7 @@ class checkout {
         $usr = new transaction();
         $usr->ref_id = $ref_id;
         $usr->customer_id = $this->customer_id;
-        $usr->payment_id = $this->payment_id;
         $usr->address = $this->address;
-        $usr->shipment_fee = 5000;
         $usr->total = $this->total;
         $usr->expired_date = date("y-m-d h:m:s",strtotime('1 hour'));
         $result = $usr->add($db);
