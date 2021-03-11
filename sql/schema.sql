@@ -66,12 +66,10 @@ CREATE TABLE transaction(
     id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
     ref_id TEXT,
     customer_id INT(11) NOT NULL,
-    payment_id INT(11) NOT NULL,
     address TEXT,
     total INT,
     expired_date DATETIME NULL,
-    FOREIGN KEY (customer_id) REFERENCES customer(id),
-    FOREIGN KEY (payment_id) REFERENCES payment(id)
+    FOREIGN KEY (customer_id) REFERENCES customer(id)
 );
 
 CREATE TABLE detail_transaction(
