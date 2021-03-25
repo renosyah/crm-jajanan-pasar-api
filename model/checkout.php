@@ -10,6 +10,7 @@ class checkout {
     public $customer_id;
     public $address;
     public $total;
+    public $transaction_date;
 
     public function __construct(){
     }
@@ -18,6 +19,7 @@ class checkout {
         $this->customer_id = (int) $data->customer_id;
         $this->address = $data->address;
         $this->total = (int) $data->total;
+        $this->transaction_date = $data->transaction_date;
     }
 
     public function add($db,$ref_id) {
@@ -29,6 +31,7 @@ class checkout {
         $usr->address = $this->address;
         $usr->total = $this->total;
         $usr->expired_date = date("y-m-d h:m:s",strtotime('1 hour'));
+        $usr->transaction_date = $this->transaction_date;
         $result = $usr->add($db);
         if ($result->error != null){
             $result_query->error = $result->error ;

@@ -173,7 +173,9 @@ CREATE TABLE `product` (
   `image_url` text COLLATE utf8_unicode_ci DEFAULT NULL,
   `stock` int(11) DEFAULT NULL,
   `rating` int(11) DEFAULT NULL,
-  `detail` text COLLATE utf8_unicode_ci DEFAULT NULL
+  `detail` text COLLATE utf8_unicode_ci DEFAULT NULL,
+  `product_type` int(11) DEFAULT 0,
+  `default_qty` int(11) DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --
@@ -373,7 +375,8 @@ CREATE TABLE `transaction` (
   `customer_id` int(11) NOT NULL,
   `address` text COLLATE utf8_unicode_ci DEFAULT NULL,
   `total` int(11) DEFAULT NULL,
-  `expired_date` datetime DEFAULT NULL
+  `expired_date` datetime DEFAULT NULL,
+  `transaction_date` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_unicode_ci;
 
 --

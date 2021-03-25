@@ -34,6 +34,8 @@ CREATE TABLE product(
     stock INT,
     rating INT,
     detail TEXT,
+    product_type INT,
+    default_qty INT,
     FOREIGN KEY (category_id) REFERENCES category(id)
 );
 
@@ -68,6 +70,7 @@ CREATE TABLE transaction(
     customer_id INT(11) NOT NULL,
     address TEXT,
     total INT,
+    transaction_date DATETIME NULL,
     expired_date DATETIME NULL,
     FOREIGN KEY (customer_id) REFERENCES customer(id)
 );

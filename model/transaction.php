@@ -12,6 +12,7 @@ class transaction {
     public $address;
     public $total;
     public $expired_date;
+    public $transaction_date;
 
     public function __construct(){
     }
@@ -23,14 +24,15 @@ class transaction {
         $this->address = $data->address;
         $this->total = (int) $data->total;
         $this->expired_date = $data->expired_date;
+        $this->transaction_date = $data->ctransaction_date;
     }
 
     public function add($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "INSERT INTO transaction (ref_id,customer_id,address,total,expired_date) VALUES (?,?,?,?,?)";
+        $query = "INSERT INTO transaction (ref_id,customer_id,address,total,expired_date,transaction_date) VALUES (?,?,?,?,?,?)";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('sisis',$this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date);
+        $stmt->bind_param('sisiss',$this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date,$this->transaction_date);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error =  "error at add new transaction : ".$stmt->error;
@@ -43,7 +45,7 @@ class transaction {
     public function one($db) {
         $result_query = new result_query();
         $one = new transaction();
-        $query = "SELECT id,ref_id,customer_id,address,total,expired_date FROM transaction WHERE id=? LIMIT 1";
+        $query = "SELECT id,ref_id,customer_id,address,total,expired_date,transaction_date FROM transaction WHERE id=? LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bind_param('i', $this->id);
         $stmt->execute();      
@@ -64,6 +66,7 @@ class transaction {
         $one->address = $result['address'];
         $one->total = $result['total'];
         $one->expired_date = $result['expired_date'];
+        $one->transaction_date = $result['transaction_date'];
         $result_query->data = $one;
         $stmt->close();
         return $result_query;
@@ -72,7 +75,7 @@ class transaction {
     public function one_by_ref($db) {
         $result_query = new result_query();
         $one = new transaction();
-        $query = "SELECT id,ref_id,customer_id,address,total,expired_date FROM transaction WHERE ref_id=? LIMIT 1";
+        $query = "SELECT id,ref_id,customer_id,address,total,expired_date,transaction_date FROM transaction WHERE ref_id=? LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bind_param('s', $this->ref_id);
         $stmt->execute();      
@@ -93,6 +96,7 @@ class transaction {
         $one->address = $result['address'];
         $one->total = $result['total'];
         $one->expired_date = $result['expired_date'];
+        $one->transaction_date = $result['transaction_date'];
         $result_query->data = $one;
         $stmt->close();
         return $result_query;
@@ -102,7 +106,7 @@ class transaction {
         $result_query = new result_query();
         $all = array();
         $query = "SELECT 
-                    id,ref_id,customer_id,address,total,expired_date
+                    id,ref_id,customer_id,address,total,expired_date,transaction_date
                 FROM 
                     transaction
                 WHERE
@@ -139,6 +143,7 @@ class transaction {
             $one->address = $result['address'];
             $one->total = $result['total'];
             $one->expired_date = $result['expired_date'];
+            $one->transaction_date = $result['transaction_date'];
             array_push($all,$one);
         }
         $result_query->data = $all;
@@ -149,9 +154,9 @@ class transaction {
     public function update($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "UPDATE transaction SET ref_id = ?,customer_id = ?,address = ?, total = ?,expired_date = ? WHERE id=?";
+        $query = "UPDATE transaction SET ref_id = ?,customer_id = ?,address = ?, total = ?,expired_date = ?,transaction_date = ? WHERE id=?";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siisiisi', $this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date, $this->id);
+        $stmt->bind_param('siisiissi', $this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date,$this->transaction_date, $this->id);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error = "error at update one transaction : ".$stmt->error;

@@ -14,6 +14,8 @@ class product {
     public $rating;
     public $image_url;
     public $detail;
+    public $product_type;
+    public $default_qty;
 
     public function __construct(){
     }
@@ -27,14 +29,16 @@ class product {
         $this->rating = (int) $data->rating;
         $this->image_url = $data->image_url;
         $this->detail = $data->detail;
+        $this->product_type = $data->product_type;
+        $this->default_qty = $data->default_qty;
     }
 
     public function add($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "INSERT INTO product (name,category_id,price,stock,rating,image_url,detail) VALUES (?,?,?,?,?,?,?)";
+        $query = "INSERT INTO product (name,category_id,price,stock,rating,image_url,detail,product_type,default_qty) VALUES (?,?,?,?,?,?,?,?,?)";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siiiiss', $this->name, $this->category_id, $this->price, $this->stock, $this->rating, $this->image_url, $this->detail);
+        $stmt->bind_param('siiiissii', $this->name, $this->category_id, $this->price, $this->stock, $this->rating, $this->image_url,$this->product_type,$this->default_qty, $this->detail);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error =  "error at add new product : ".$stmt->error;
@@ -47,7 +51,7 @@ class product {
     public function one($db) {
         $result_query = new result_query();
         $one = new product();
-        $query = "SELECT id,name,category_id,price,stock,rating,image_url,detail FROM product WHERE id=? LIMIT 1";
+        $query = "SELECT id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty FROM product WHERE id=? LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bind_param('i', $this->id);
         $stmt->execute();      
@@ -70,6 +74,8 @@ class product {
         $one->rating = $result['rating'];
         $one->image_url = $result['image_url'];
         $one->detail = $result['detail'];
+        $one->product_type = $result['product_type'];
+        $one->default_qty = $result['default_qty'];
         $result_query->data = $one;
         $stmt->close();
         return $result_query;
@@ -79,13 +85,15 @@ class product {
         $result_query = new result_query();
         $all = array();
         $query = "SELECT 
-                    id,name,category_id,price,stock,rating,image_url,detail
+                    id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty
                 FROM 
                     product
                 WHERE
                     ".$list_query->search_by." LIKE ?
                 AND
                     category_id = ?
+                AND
+                    product_type = 0
                 ORDER BY
                     ".$list_query->order_by." ".$list_query->order_dir." 
                 LIMIT ? 
@@ -118,6 +126,8 @@ class product {
             $one->rating = $result['rating'];
             $one->image_url = $result['image_url'];
             $one->detail = $result['detail'];
+            $one->product_type = $result['product_type'];
+            $one->default_qty = $result['default_qty'];
             array_push($all,$one);
         }
         $result_query->data = $all;
@@ -145,6 +155,8 @@ class product {
                     EXISTS (
                         SELECT 1 FROM  validate_transaction vt WHERE vt.transaction_id = t.id
                     )
+                AND
+                    p.product_type = 0
                 GROUP BY
                     p.id
                 HAVING 
@@ -203,6 +215,8 @@ class product {
                     EXISTS (
                         SELECT 1 FROM  validate_transaction vt WHERE vt.transaction_id = t.id LIMIT 1
                     )
+                AND
+                    p.product_type = 0
                 GROUP BY
                     p.id
                 HAVING 
@@ -239,12 +253,123 @@ class product {
         return $result_query;
     }
 
+    public function all_promo($db,$list_query,$customer_id,$current_date) {
+        $result_query = new result_query();
+        $all = array();
+        $query = "SELECT 
+                    p.id as id
+                FROM 
+                    product p
+                WHERE
+                    p.product_type = 1
+                LIMIT ? 
+                OFFSET ?";
+        $stmt = $db->prepare($query);
+        $offset = $list_query->offset;
+        $limit =  $list_query->limit;
+        $stmt->bind_param('ii', $limit, $offset);
+        $stmt->execute();
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query all product : ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            $result_query->data = $all;
+            return $result_query;
+        }
+
+        while ($result = $rows->fetch_assoc()){
+            $one = new product();
+            $one->id = $result['id'];
+            if ($this->validate_promo_transaction($db,$one->id,$customer_id,$current_date) && $this->validate_promo_cart($db,$one->id,$customer_id)) {
+                $p = $one->one($db)->data;
+                array_push($all,$p);
+            }
+        }
+        $result_query->data = $all;
+        $stmt->close();
+        return $result_query;
+    }
+
+    public function validate_promo_transaction($db,$product_id,$customer_id,$current_date) {
+        $result_query = true;
+        $query = "SELECT 
+                    COUNT(*) as result 
+                FROM 
+                    detail_transaction dt 
+                INNER JOIN 
+                    transaction t 
+                ON 
+                    t.id = dt.transaction_id 
+                WHERE
+                    dt.product_id = ?
+                AND
+                    t.customer_id = ?
+                AND
+                    t.transaction_date = ?
+                AND
+                    EXISTS (
+                        SELECT 1 FROM validate_transaction vt WHERE vt.transaction_id = t.id LIMIT 1
+                )";
+        $stmt = $db->prepare($query);
+        $stmt->bind_param('iis',$product_id, $customer_id,$current_date);
+        $stmt->execute();      
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query one product: ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            return $result_query;
+        }
+        $result = $rows->fetch_assoc();
+        $result_query = (int) $result['result'] == 0;
+        $stmt->close();
+        return $result_query;
+    }
+
+
+    public function validate_promo_cart($db,$product_id,$customer_id) {
+        $result_query = true;
+        $query = "SELECT 
+                    COUNT(*) as result 
+                FROM 
+                    cart
+                WHERE
+                    product_id = ?
+                AND
+                    customer_id = ?";
+        $stmt = $db->prepare($query);
+        $stmt->bind_param('ii',$product_id, $customer_id);
+        $stmt->execute();      
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query one product: ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            return $result_query;
+        }
+        $result = $rows->fetch_assoc();
+        $result_query = (int) $result['result'] == 0;
+        $stmt->close();
+        return $result_query;
+    }
+
+
     public function update($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "UPDATE product SET name = ?,category_id = ?,price = ?,stock = ?,rating = ?,image_url = ?,detail = ? WHERE id=?";
+        $query = "UPDATE product SET name = ?,category_id = ?,price = ?,stock = ?,rating = ?,image_url = ?,detail = ?,product_type = ?,default_qty = ? WHERE id=?";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siiiissi', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->id);
+        $stmt->bind_param('siiiissiii', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty,$this->id);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error = "error at update one product : ".$stmt->error;
