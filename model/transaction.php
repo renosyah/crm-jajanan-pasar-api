@@ -156,7 +156,7 @@ class transaction {
         $result_query->data = "ok";
         $query = "UPDATE transaction SET ref_id = ?,customer_id = ?,address = ?, total = ?,expired_date = ?,transaction_date = ? WHERE id=?";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siisiissi', $this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date,$this->transaction_date, $this->id);
+        $stmt->bind_param('sisissi', $this->ref_id,$this->customer_id,$this->address,$this->total,$this->expired_date,$this->transaction_date, $this->id);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error = "error at update one transaction : ".$stmt->error;

@@ -38,7 +38,7 @@ class product {
         $result_query->data = "ok";
         $query = "INSERT INTO product (name,category_id,price,stock,rating,image_url,detail,product_type,default_qty) VALUES (?,?,?,?,?,?,?,?,?)";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siiiissii', $this->name, $this->category_id, $this->price, $this->stock, $this->rating, $this->image_url,$this->product_type,$this->default_qty, $this->detail);
+        $stmt->bind_param('siiiiissii', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error =  "error at add new product : ".$stmt->error;
