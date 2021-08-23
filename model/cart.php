@@ -3,7 +3,7 @@
 // menggabungkan kode dari file product.php
 // yg mana model ini dibutuhkan
 // untuk query
-include("product.php");
+include_once("product.php");
 
 class total_cart {
     public $item;

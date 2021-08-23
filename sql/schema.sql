@@ -36,6 +36,7 @@ CREATE TABLE product(
     detail TEXT,
     product_type INT,
     default_qty INT,
+    exp_date date,
     FOREIGN KEY (category_id) REFERENCES category(id)
 );
 

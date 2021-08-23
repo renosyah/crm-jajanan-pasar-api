@@ -3,7 +3,7 @@
 // menggabungkan kode dari file result_query.php
 // yg mana result_query digunakan sebagai
 // object yg digunakan untuk hasil
-include("result_query.php");
+include_once("result_query.php");
 
 class transaction {
     public $id;
@@ -24,7 +24,7 @@ class transaction {
         $this->address = $data->address;
         $this->total = (int) $data->total;
         $this->expired_date = $data->expired_date;
-        $this->transaction_date = $data->ctransaction_date;
+        $this->transaction_date = $data->transaction_date;
     }
 
     public function add($db) {
@@ -122,6 +122,53 @@ class transaction {
         $offset = $list_query->offset;
         $limit =  $list_query->limit;
         $stmt->bind_param('siii',$search ,$customer_id ,$limit, $offset);
+        $stmt->execute();
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query all transaction : ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            $result_query->data = $all;
+            return $result_query;
+        }
+
+        while ($result = $rows->fetch_assoc()){
+            $one = new transaction();
+            $one->id = $result['id'];
+            $one->ref_id = $result['ref_id'];
+            $one->customer_id = $result['customer_id'];
+            $one->address = $result['address'];
+            $one->total = $result['total'];
+            $one->expired_date = $result['expired_date'];
+            $one->transaction_date = $result['transaction_date'];
+            array_push($all,$one);
+        }
+        $result_query->data = $all;
+        $stmt->close();
+        return $result_query;
+    }
+
+    public function all_basic($db,$list_query) {
+        $result_query = new result_query();
+        $all = array();
+        $query = "SELECT 
+                    id,ref_id,customer_id,address,total,expired_date,transaction_date
+                FROM 
+                    transaction
+                WHERE
+                    ".$list_query->search_by." LIKE ?
+                ORDER BY
+                    ".$list_query->order_by." ".$list_query->order_dir." 
+                LIMIT ? 
+                OFFSET ?";
+        $stmt = $db->prepare($query);
+        $search = "%".$list_query->search_value."%";
+        $offset = $list_query->offset;
+        $limit =  $list_query->limit;
+        $stmt->bind_param('sii',$search ,$limit, $offset);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query-> error = "error at query all transaction : ".$stmt->error;

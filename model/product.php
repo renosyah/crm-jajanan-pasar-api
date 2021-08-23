@@ -3,7 +3,7 @@
 // menggabungkan kode dari file result_query.php
 // yg mana result_query digunakan sebagai
 // object yg digunakan untuk hasil
-include("result_query.php");
+include_once("result_query.php");
 
 class product {
     public $id;
@@ -16,6 +16,7 @@ class product {
     public $detail;
     public $product_type;
     public $default_qty;
+    public $exp_date;
 
     public function __construct(){
     }
@@ -31,14 +32,15 @@ class product {
         $this->detail = $data->detail;
         $this->product_type = $data->product_type;
         $this->default_qty = $data->default_qty;
+        $this->exp_date = $data->exp_date;
     }
 
     public function add($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "INSERT INTO product (name,category_id,price,stock,rating,image_url,detail,product_type,default_qty) VALUES (?,?,?,?,?,?,?,?,?)";
+        $query = "INSERT INTO product (name,category_id,price,stock,rating,image_url,detail,product_type,default_qty,exp_date) VALUES (?,?,?,?,?,?,?,?,?,?)";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siiiiissii', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty);
+        $stmt->bind_param('siiiissiis', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty,$this->exp_date);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error =  "error at add new product : ".$stmt->error;
@@ -51,7 +53,7 @@ class product {
     public function one($db) {
         $result_query = new result_query();
         $one = new product();
-        $query = "SELECT id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty FROM product WHERE id=? LIMIT 1";
+        $query = "SELECT id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty,exp_date FROM product WHERE id=? LIMIT 1";
         $stmt = $db->prepare($query);
         $stmt->bind_param('i', $this->id);
         $stmt->execute();      
@@ -76,6 +78,7 @@ class product {
         $one->detail = $result['detail'];
         $one->product_type = $result['product_type'];
         $one->default_qty = $result['default_qty'];
+        $one->exp_date = $result['exp_date'];
         $result_query->data = $one;
         $stmt->close();
         return $result_query;
@@ -85,7 +88,7 @@ class product {
         $result_query = new result_query();
         $all = array();
         $query = "SELECT 
-                    id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty
+                    id,name,category_id,price,stock,rating,image_url,detail,product_type,default_qty,exp_date
                 FROM 
                     product
                 WHERE
@@ -128,9 +131,104 @@ class product {
             $one->detail = $result['detail'];
             $one->product_type = $result['product_type'];
             $one->default_qty = $result['default_qty'];
+            $one->exp_date = $result['exp_date'];
             array_push($all,$one);
         }
         $result_query->data = $all;
+        $stmt->close();
+        return $result_query;
+    }
+
+    public function count_recomended($db) {
+        $result_query = new result_query();
+        $query = "SELECT 
+                    COUNT(DISTINCT t.customer_id) as recomended_value
+                FROM 
+                    product p
+                INNER JOIN
+                    detail_transaction dt
+                ON
+                    dt.product_id = p.id
+                INNER JOIN
+                    transaction t
+                ON
+                    t.id = dt.transaction_id
+                WHERE
+                    EXISTS (
+                        SELECT 1 FROM  validate_transaction vt WHERE vt.transaction_id = t.id
+                    )
+                AND
+                    p.id = ?
+                AND
+                    p.product_type = 0
+                GROUP BY
+                    p.id
+                ORDER BY
+                    COUNT(DISTINCT t.customer_id) DESC
+                LIMIT 1";
+        $stmt = $db->prepare($query);
+        $stmt->bind_param('i', $this->id);
+        $stmt->execute();
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query all product : ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            return $result_query;
+        }
+        $result = $rows->fetch_assoc();
+        $one = (object) ['recomended_value' => $result['recomended_value']];
+        $result_query->data = $one;
+        $stmt->close();
+        return $result_query;
+    }
+
+    public function sum_sold($db) {
+        $result_query = new result_query();
+        $query = "SELECT 
+                    SUM(dt.sub_total) as sum_sold,
+                    COUNT(dt.product_id) as count_sold
+                FROM 
+                    product p
+                INNER JOIN
+                    detail_transaction dt
+                ON
+                    dt.product_id = p.id
+                INNER JOIN
+                    transaction t
+                ON
+                    t.id = dt.transaction_id
+                WHERE
+                    EXISTS (
+                        SELECT 1 FROM  validate_transaction vt WHERE vt.transaction_id = t.id
+                    )
+                AND
+                    p.id = ?
+                AND
+                    p.product_type = 0
+                GROUP BY
+                    p.id
+                LIMIT 1";
+
+        $stmt = $db->prepare($query);
+        $stmt->bind_param('i', $this->id);
+        $stmt->execute();
+        if ($stmt->error != ""){
+            $result_query-> error = "error at query all product : ".$stmt->error;
+            $stmt->close();
+            return $result_query;
+        }
+        $rows = $stmt->get_result();
+        if($rows->num_rows == 0){
+            $stmt->close();
+            return $result_query;
+        }
+        $result = $rows->fetch_assoc();
+        $one = (object) ['sum_sold' => $result['sum_sold'],'count_sold' => $result['count_sold']];
+        $result_query->data = $one;
         $stmt->close();
         return $result_query;
     }
@@ -367,9 +465,9 @@ class product {
     public function update($db) {
         $result_query = new result_query();
         $result_query->data = "ok";
-        $query = "UPDATE product SET name = ?,category_id = ?,price = ?,stock = ?,rating = ?,image_url = ?,detail = ?,product_type = ?,default_qty = ? WHERE id=?";
+        $query = "UPDATE product SET name = ?,category_id = ?,price = ?,stock = ?,rating = ?,image_url = ?,detail = ?,product_type = ?,default_qty = ?,exp_date = ? WHERE id=?";
         $stmt = $db->prepare($query);
-        $stmt->bind_param('siiiissiii', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty,$this->id);
+        $stmt->bind_param('siiiissiisi', $this->name,$this->category_id,$this->price,$this->stock,$this->rating,$this->image_url,$this->detail,$this->product_type,$this->default_qty,$this->exp_date,$this->id);
         $stmt->execute();
         if ($stmt->error != ""){
             $result_query->error = "error at update one product : ".$stmt->error;

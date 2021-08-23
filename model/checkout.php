@@ -3,7 +3,7 @@
 // menggabungkan kode dari file transaction.php
 // yg mana model ini dibutuhkan
 // untuk query
-include("transaction.php");
+include_once("transaction.php");
 
 class checkout {
 

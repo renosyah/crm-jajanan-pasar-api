@@ -31,7 +31,7 @@ function get_connection($configs){
 
         // maka program akan dimatikkan
         // dan ditampilkan error
-        die("Connection failed: " . $conn->connect_error);
+        die("Connection failed: " . $db->connect_error);
     }
 
     // mengembalikan object db sebagai hasil
